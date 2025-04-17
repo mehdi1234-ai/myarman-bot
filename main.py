@@ -1,25 +1,34 @@
 import os
+import json
 import openai
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# ==== ثابت‌ها (در کد گذاشته شده) ====
-TELEGRAM_TOKEN = "7101873768:AAHCsefEGuf4KFbesjo7TBd_TrIqIuwg2uo"
-GOOGLE_SHEET_NAME = "My Arman"
-CREDENTIALS_JSON = "secret-sphinx-457017-j2-9f23d084711f.json"
-
-# ==== دریافت کلید OpenAI از محیط ====
+# ==== دریافت مقادیر حساس از GitHub Secrets ====
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+GOOGLE_CREDENTIALS = os.environ.get("GOOGLE_CREDENTIALS")
+GOOGLE_SHEET_NAME = "My Arman"
+
+# ==== ذخیره موقت فایل Google Credentials ====
+CREDENTIALS_JSON = "google_credentials.json"
+with open(CREDENTIALS_JSON, "w") as f:
+    f.write(GOOGLE_CREDENTIALS)
+
+# ==== پیکربندی OpenAI ====
 openai.api_key = OPENAI_API_KEY
 
-# ==== Google Sheets Setup ====
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# ==== تنظیم Google Sheets ====
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive"
+]
 creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_JSON, scope)
 client = gspread.authorize(creds)
 sheet = client.open(GOOGLE_SHEET_NAME).sheet1
 
-# ==== Telegram Handlers ====
+# ==== هندلرهای تلگرام ====
 def start(update, context):
     update.message.reply_text("سلام! من دستیار مهاجرت هستم. سوالی درباره مهاجرت داری؟")
 
@@ -43,7 +52,7 @@ def save_info(update, context):
     else:
         update.message.reply_text("فرمت اشتباه است. لطفاً به صورت «نام، ایمیل، کشور» وارد کنید.")
 
-# ==== Main Function ====
+# ==== راه‌اندازی ربات ====
 def main():
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
